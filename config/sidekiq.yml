@@ -1,0 +1,6 @@
+# Queues for the default (parallel) capsule. The "evaluation" queue runs in its own
+# single-threaded capsule, configured in config/initializers/sidekiq.rb.
+:concurrency: <%= ENV.fetch("SIDEKIQ_CONCURRENCY", 5) %>
+:queues:
+  - default
+  - mailers

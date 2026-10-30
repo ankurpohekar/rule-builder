@@ -55,7 +55,8 @@ jobs:
 
     services:
       postgres:
-        image: postgres
+        # Postgres with the pgvector extension, which the FAQ bot's search index needs.
+        image: pgvector/pgvector:0.8.7-pg18
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres

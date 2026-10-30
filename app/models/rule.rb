@@ -14,6 +14,8 @@ class Rule < ApplicationRecord
   # Any rule change can change which rule wins, so re-run every applicant in the background.
   # after_commit (not after_save) so the job never runs before the change is visible.
   after_commit -> { EvaluateApplicantsJob.enqueue }
+  # The applicants API shows each applicant's rule name and outcome from a cached list of rules.
+  after_commit -> { ApplicantCache.expire_rules! }
 
   def matches?(applicant)
     ConditionTree.new(conditions).matches?(applicant)

@@ -2,11 +2,15 @@ Rails.application.routes.draw do
   namespace :api do
     resources :applicants do
       post :evaluate, on: :collection
+      post :draft, on: :collection
     end
     resources :rules do
       post :draft, on: :collection
     end
     resource :schema, only: :show, controller: :schema
+    resources :faqs, only: :index
+    post "faq/ask", to: "faq_questions#create"
+    patch "faq/questions/:id", to: "faq_questions#update"
   end
 
   # Sidekiq dashboard. Open in development; in production only when basic auth credentials are set.

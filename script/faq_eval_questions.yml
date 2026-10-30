@@ -1,0 +1,69 @@
+# Evaluation set for FAQ retrieval (script/faq_eval.rb).
+#
+# covered: questions the FAQ answers, phrased the way users ask (not copied from the FAQ), with
+#   the key of the entry that answers each. Some have two acceptable entries.
+# off_topic: questions the FAQ does not answer; the bot should say so.
+#
+# Add real questions from the faq_questions table as they come in, especially unanswered and
+# thumbs-down ones: an eval set built from real traffic beats one written by hand.
+covered:
+  - q: can I get back an applicant I removed by mistake?
+    expect: [applicants:7]
+  - q: what happens if two rules both apply to someone
+    expect: [rules:1]
+  - q: how do I write an OR condition
+    expect: [rules:3, rules:4]
+  - q: nobody is getting approved, everyone stays pending
+    expect: [rules:11]
+  - q: what does a 409 mean
+    expect: [technical:1]
+  - q: is the email check case sensitive
+    expect: [applicants:3]
+  - q: what's the allowed range for credit scores
+    expect: [applicants:2]
+  - q: why don't I see new statuses right after changing a rule
+    expect: [evaluation:2]
+  - q: can I turn off a rule without deleting it
+    expect: [rules:8]
+  - q: does the AI invent missing information about applicants
+    expect: [ai:2]
+  - q: where does the text I paste into the AI go
+    expect: [ai:7]
+  - q: I clicked save twice, will I get duplicates
+    expect: [applicants:10]
+  - q: how long until an idempotency key expires
+    expect: [technical:2]
+  - q: can I set someone to approved manually
+    expect: [applicants:9]
+  - q: why does searching "jo" not find "Mojo"
+    expect: [search:1]
+  - q: how fast is it with lots of applicants
+    expect: [evaluation:5]
+  - q: what operators can I use on numbers
+    expect: [rules:5]
+  - q: how do I see failed background jobs
+    expect: [technical:3]
+  - q: do I have to press a button to run the rules
+    expect: [basics:3, evaluation:0]
+  - q: can rules look at home ownership
+    expect: [rules:12, ai:5]
+  - q: what happens to people when I remove a rule
+    expect: [rules:9]
+  - q: does lower case country code break anything
+    expect: [applicants:4]
+  - q: can I type 85k as income in the AI box
+    expect: [ai:3]
+  - q: what should I do first when I open the app
+    expect: [basics:2]
+  - q: Idempotency-Key header
+    expect: [technical:1, technical:2]
+
+off_topic:
+  - what's the weather in Paris tomorrow
+  - how do I make a pizza
+  - who won the world cup
+  - write me a poem about the ocean
+  - what is the capital of Australia
+  - how do I reset my bank password
+  - recommend a good laptop
+  - translate hello into French

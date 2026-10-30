@@ -1,0 +1,233 @@
+# FAQ content: the FAQ page and the FAQ bot both read this file.
+# Each question is identified by "<section id>:<position>" (e.g. "rules:2"), so add new
+# questions at the end of a section to keep existing links and citations stable.
+# After editing, run `bin/rails faq:sync` to update the bot's search index.
+---
+- id: basics
+  title: Getting started
+  items:
+  - q: What is Rule Builder?
+    a: >-
+      Rule Builder screens loan applicants automatically. You describe who should be approved or rejected as rules,
+      and every applicant is checked against those rules to get a status of approved, rejected or pending.
+  - q: What do the three statuses mean?
+    a: |-
+      Approved and rejected mean a rule matched the applicant and decided for them.
+
+      Pending means no active rule matched, so a person needs to review the applicant. Pending is also the status of every applicant when there are no rules yet.
+  - q: Where do I start?
+    a: >-
+      Add a few rules on the Rules tab first, then add applicants on the Applicants tab. Each applicant is checked
+      against the rules as soon as they are saved.
+  - q: Do I need to save anything for a decision to be made?
+    a: >-
+      No. Saving an applicant, or saving, enabling, disabling or deleting a rule, triggers evaluation automatically.
+      There is no separate "run" step.
+  - q: Does the app remember my search and filter when I refresh?
+    a: >-
+      Yes. The search text and status filter are kept in the page address, so a refresh or a shared link opens the
+      same filtered list.
+- id: applicants
+  title: Applicants
+  items:
+  - q: How do I add an applicant?
+    a: >-
+      Click "Add applicant" on the Applicants tab, fill in the form and click Save. Only name and email are required;
+      leave anything you don't know blank.
+  - q: Which applicant details can I store?
+    a: >-
+      Name, email, age, credit score, annual income, employment status and country. These are also the fields that
+      rules can check.
+  - q: What values are accepted for each field?
+    a: |-
+      Age: a whole number from 0 to 120.
+
+      Credit score: a whole number from 300 to 850.
+
+      Annual income: zero or more, up to two decimal places.
+
+      Employment status: employed, self employed, unemployed, student or retired.
+
+      Country: a 2-letter ISO code such as US, IN or GB.
+
+      Email: a valid address that no other applicant uses.
+  - q: Why was my email rejected as "already taken"?
+    a: >-
+      Each email can belong to only one applicant, ignoring upper and lower case. Search for the email to find the
+      existing applicant and edit them instead.
+  - q: I typed the country in lower case. Is that a problem?
+    a: >-
+      No. Countries are converted to upper case, emails to lower case, and extra spaces in names are removed when
+      you save.
+  - q: What happens when I leave a field blank?
+    a: >-
+      It is stored as unknown. A rule condition on that field does not match (except "is blank"), so the applicant
+      may stay pending.
+  - q: If I edit an applicant, is their status updated?
+    a: >-
+      Yes, if you change any field that rules can check. The applicant is evaluated again against the current rules
+      when you save.
+  - q: Can I delete an applicant?
+    a: Yes, with the Delete button on their row. Deleting is permanent and cannot be undone.
+  - q: What does the "Decided by" column show?
+    a: >-
+      The name of the rule that set the applicant's status. "No rule matched" means the applicant is pending because
+      none of the active rules applied.
+  - q: Can I change an applicant's status by hand?
+    a: >-
+      No. Status always comes from the rules, so every decision can be explained by a rule. To change an outcome,
+      change the rules or the applicant's details.
+  - q: Why did clicking Save twice not create two applicants?
+    a: >-
+      Each new-applicant submission carries a unique key. If the same submission arrives twice, from a double click
+      or a retry after a network error, the server returns the first result instead of creating a duplicate.
+- id: search
+  title: Search and filters
+  items:
+  - q: What can I search for?
+    a: Applicant names and email addresses. Search is not case-sensitive.
+  - q: Why does a short search only match the beginning of names?
+    a: >-
+      Searches of one or two characters match names and emails that start with those characters, which keeps results
+      useful and fast. From three characters on, the text can appear anywhere: "rao" finds "Sundar Rao" and "rao.p@example.com".
+  - q: Can I combine search with the status filter?
+    a: >-
+      Yes. Both apply together, for example all pending applicants whose name contains "shah". Click Clear to reset
+      both.
+  - q: Why does the list update a moment after I stop typing?
+    a: >-
+      The app waits briefly for you to finish typing before searching, so it doesn't send a request for every keystroke.
+  - q: Do special characters like % or _ work in search?
+    a: They are searched as ordinary characters, so searching for "a_b" finds the text "a_b" exactly.
+- id: rules
+  title: Rules
+  items:
+  - q: What is a rule?
+    a: >-
+      A rule has a name, an outcome (approve or reject) and a set of conditions, for example "credit score is below
+      550". When an applicant matches all of a rule's conditions, the rule's outcome becomes their status.
+  - q: What if more than one rule matches an applicant?
+    a: >-
+      Rules are checked in priority order, lowest number first, and the first one that matches decides. Later rules
+      are not checked for that applicant.
+  - q: How should I choose priorities?
+    a: >-
+      Put the most important or most specific rules first, usually rejections such as "under 18". Priorities don't
+      need to be consecutive: steps of 10 leave room to add a rule in between later.
+  - q: What do "all" and "any" mean in a condition group?
+    a: '"All" means every condition in the group must match (AND). "Any" means at least one must match (OR).'
+  - q: Can I mix AND and OR in one rule?
+    a: >-
+      Yes. Add a nested group inside a group. For example: reject if age is under 18 OR (credit score is below 550
+      AND income is below 30,000).
+  - q: Which operators are available?
+    a: |-
+      Numbers (age, credit score, income): equals, does not equal, >, ≥, <, ≤, is present, is blank.
+
+      Text (country, email, name): equals, does not equal, contains, starts with, is one of, is not one of, is present, is blank.
+
+      Employment status: equals, does not equal, is one of, is not one of, is present, is blank.
+  - q: Are text comparisons case-sensitive?
+    a: No. "in" and "IN" are treated the same when comparing text.
+  - q: How do I match one of several values?
+    a: Use "is one of" and choose or list the values, for example country is one of US, CA, GB.
+  - q: What does disabling a rule do?
+    a: >-
+      A disabled rule stays saved but is skipped during evaluation. Applicants it decided are evaluated again, which
+      lets you switch a rule off temporarily without losing it.
+  - q: What happens to applicants when I delete a rule?
+    a: >-
+      Every applicant is evaluated again without that rule. Applicants it had decided may now match another rule
+      or become pending.
+  - q: Can a rule set an applicant to pending?
+    a: No. Rules approve or reject. Pending is what remains when no rule matches.
+  - q: Why is everyone still pending after I added a rule?
+    a: >-
+      Common reasons: the rule is disabled; its conditions use a value that doesn't appear in the data (for example
+      country "India" instead of the code "IN"); the applicants have blanks in the fields the rule checks; or a
+      re-evaluation is still running. Check the rule's summary line and wait a moment before refreshing.
+  - q: Can rules check a field that isn't in the applicant form?
+    a: >-
+      No. Rules can only use the fields applicants have. Adding a new field, such as home ownership, requires a
+      change to the app.
+- id: ai
+  title: AI assistance
+  items:
+  - q: How does "Draft with AI" work for rules?
+    a: >-
+      Describe the rule in plain English, for example "reject anyone under 18 or with a credit score below 550".
+      Claude turns it into a rule and opens it in the editor. Nothing is saved until you review it and click "Save
+      rule".
+  - q: How does "Fill with AI" work for applicants?
+    a: >-
+      Paste a note, an email or form answers about a person. Claude reads the details and fills in the new-applicant
+      form. Check the values, complete any blanks and click Save; nothing is saved before that.
+  - q: Will the AI make up details it doesn't know?
+    a: >-
+      It is instructed not to. Anything the text doesn't state is left blank for you to fill in. It only works out
+      values the text gives directly, such as an age from a birth year or a yearly income from a monthly one.
+  - q: Can I write amounts like "85k" or "1.5 lakh a month"?
+    a: Yes. The AI converts them to plain yearly numbers, and countries or cities to 2-letter country codes.
+  - q: What if the AI gets something wrong?
+    a: >-
+      Its output goes through the same checks as typed input, and invalid values are sent back to it to correct.
+      You still review every draft before saving, so you can fix anything it got wrong.
+  - q: Why did the AI say it couldn't draft my rule?
+    a: >-
+      The description needs data the app doesn't have, such as home ownership or loan amount. Rather than guess
+      with a different field, the AI explains what is missing and lists the fields available.
+  - q: What if the AI service is unavailable?
+    a: >-
+      You'll see a message saying so. Try again later, or build the rule or fill in the applicant by hand; everything
+      works without AI.
+  - q: Is the text I paste sent anywhere?
+    a: >-
+      Yes. Text you submit to "Draft with AI" or "Fill with AI" is sent to Anthropic's API to be processed. Don't
+      paste information you aren't allowed to share with that service.
+- id: evaluation
+  title: Evaluation
+  items:
+  - q: When are applicants evaluated?
+    a: >-
+      A single applicant is evaluated immediately when created or edited. All applicants are evaluated again in
+      the background whenever a rule is created, changed, enabled, disabled or deleted.
+  - q: What does "Re-evaluate all" do?
+    a: >-
+      It asks the server to check every applicant against the current rules again. Use it if you think statuses
+      are out of date. Normally you don't need it, because rule changes trigger it automatically.
+  - q: Why didn't statuses change straight after I edited a rule?
+    a: >-
+      Re-evaluating everyone runs as a background job so the page stays fast. It usually finishes within seconds;
+      refresh the list or click "Re-evaluate all" to see the results.
+  - q: I edited several rules quickly. Is everything evaluated several times?
+    a: >-
+      No. While a re-evaluation is waiting to start, further changes are folded into it. The single run uses the
+      latest version of every rule.
+  - q: Can two re-evaluations run at once and give mixed results?
+    a: No. Re-evaluations run one at a time, so each run sees one consistent set of rules.
+  - q: How many applicants can be evaluated?
+    a: >-
+      Applicants are processed in batches and only those whose decision changes are written. In testing, 100,000
+      applicants were re-evaluated in about 5 seconds.
+- id: technical
+  title: Technical and API
+  items:
+  - q: Is there an API?
+    a: >-
+      Yes. Everything in the app uses a JSON API under /api: applicants, rules, schema (fields and operators), applicants/evaluate,
+      rules/draft and applicants/draft.
+  - q: How do I avoid duplicate applicants when calling the API?
+    a: >-
+      Send an Idempotency-Key header (for example a UUID) with POST /api/applicants. Retrying with the same key
+      and body returns the original response with the header "Idempotent-Replayed: true". Reusing the key with a
+      different body returns 422, and a retry while the first request is still running returns 409.
+  - q: How long are idempotency keys remembered?
+    a: 24 hours. After that, the same key is treated as new.
+  - q: Where can I see background jobs?
+    a: >-
+      The Sidekiq dashboard at /sidekiq on the API server shows queued, running, retrying and failed jobs. In production
+      it requires a username and password.
+  - q: What does the API return when validation fails?
+    a: >-
+      Status 422 with a JSON body like {"errors": ["Email has already been taken"]}. The app shows these messages
+      above the form.

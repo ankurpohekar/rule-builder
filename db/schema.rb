@@ -10,10 +10,11 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_26_055340) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_30_042333) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
+  enable_extension "vector"
 
   create_table "applicants", force: :cascade do |t|
     t.string "name", null: false
@@ -30,11 +31,42 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_26_055340) do
     t.datetime "updated_at", null: false
     t.index "lower((email)::text) text_pattern_ops", name: "index_applicants_on_lower_email_prefix"
     t.index "lower((name)::text) text_pattern_ops", name: "index_applicants_on_lower_name_prefix"
+    t.index ["created_at", "id"], name: "index_applicants_on_created_at_and_id"
     t.index ["email"], name: "index_applicants_on_email", unique: true
     t.index ["email"], name: "index_applicants_on_email_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["matched_rule_id"], name: "index_applicants_on_matched_rule_id"
     t.index ["name"], name: "index_applicants_on_name_trgm", opclass: :gin_trgm_ops, using: :gin
-    t.index ["status"], name: "index_applicants_on_status"
+    t.index ["status", "created_at", "id"], name: "index_applicants_on_status_and_created_at_and_id"
+  end
+
+  create_table "faq_entries", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "section_title", null: false
+    t.text "question", null: false
+    t.text "answer", null: false
+    t.string "content_digest", null: false
+    t.vector "embedding", limit: 384
+    t.virtual "searchable", type: :tsvector, as: "(setweight(to_tsvector('english'::regconfig, question), 'A'::\"char\") || setweight(to_tsvector('english'::regconfig, answer), 'B'::\"char\"))", stored: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["embedding"], name: "index_faq_entries_on_embedding", opclass: :vector_cosine_ops, using: :hnsw
+    t.index ["key"], name: "index_faq_entries_on_key", unique: true
+    t.index ["searchable"], name: "index_faq_entries_on_searchable", using: :gin
+  end
+
+  create_table "faq_questions", force: :cascade do |t|
+    t.text "question", null: false
+    t.text "answer"
+    t.boolean "answered", default: false, null: false
+    t.jsonb "retrieved", default: [], null: false
+    t.string "sources", default: [], null: false, array: true
+    t.float "top_similarity"
+    t.integer "feedback"
+    t.integer "duration_ms"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["answered"], name: "index_faq_questions_on_answered"
+    t.index ["created_at"], name: "index_faq_questions_on_created_at"
   end
 
   create_table "idempotency_keys", force: :cascade do |t|

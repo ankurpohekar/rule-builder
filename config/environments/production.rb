@@ -43,8 +43,23 @@ Rails.application.configure do
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
 
-  # Replace the default in-process memory cache store with a durable alternative.
-  config.cache_store = :solid_cache_store
+  # Redis, shared by every app server (see app/caches/applicant_cache.rb). Use a Redis of its
+  # own, configured with maxmemory and maxmemory-policy allkeys-lru, so it evicts the coldest
+  # entries when full. Sidekiq's Redis (REDIS_URL) must never evict, so the two can't share
+  # an instance: eviction policy is per instance, not per database number.
+  config.cache_store = :redis_cache_store, {
+    url: ENV.fetch("REDIS_CACHE_URL", "redis://localhost:6379/1"),
+    namespace: "rule-builder:cache",
+    pool: { size: ENV.fetch("RAILS_MAX_THREADS", 3).to_i, timeout: 1 },
+    # A slow cache is worse than none: give up quickly and read from Postgres instead.
+    connect_timeout: 1, read_timeout: 0.2, write_timeout: 0.2, reconnect_attempts: 1,
+    # Safety net for any entry written without its own TTL.
+    expires_in: 1.day,
+    # Redis errors are already turned into cache misses; report them so an outage is visible.
+    error_handler: ->(method:, returning:, exception:) {
+      Rails.error.report(exception, handled: true, severity: :warning, context: { cache_method: method, returning: returning })
+    }
+  }
 
   # Active Job uses Sidekiq (see config/application.rb); set REDIS_URL in the environment.
 

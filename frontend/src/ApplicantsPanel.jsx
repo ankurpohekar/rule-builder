@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from './api'
+import Link from './Link'
 
 const EMPTY = { name: '', email: '', age: '', credit_score: '', annual_income: '', employment_status: '', country: '' }
 
@@ -8,12 +9,16 @@ const initialParams = new URLSearchParams(window.location.search)
 
 export default function ApplicantsPanel({ schema }) {
   const [applicants, setApplicants] = useState(null)
+  const [nextCursor, setNextCursor] = useState(null)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [search, setSearch] = useState(initialParams.get('q') ?? '')
   const [query, setQuery] = useState(search)
   const [status, setStatus] = useState(initialParams.get('status') ?? '')
   const [editing, setEditing] = useState(null)
   const [error, setError] = useState(null)
   const [reevaluating, setReevaluating] = useState(false)
+  const [prompt, setPrompt] = useState('')
+  const [drafting, setDrafting] = useState(false)
 
   // Wait for a pause in typing before hitting the API.
   useEffect(() => {
@@ -25,13 +30,33 @@ export default function ApplicantsPanel({ schema }) {
   const latestRequest = useRef(0)
   // The last create attempt: { body, key }. Retrying the same body reuses the key.
   const createAttempt = useRef(null)
+  // Loads the first page again (after filtering or any change).
   const load = useCallback(() => {
     const requestId = ++latestRequest.current
     api
       .applicants({ q: query, status })
-      .then((data) => requestId === latestRequest.current && setApplicants(data))
+      .then((page) => {
+        if (requestId !== latestRequest.current) return
+        setApplicants(page.applicants)
+        setNextCursor(page.nextCursor)
+      })
       .catch((e) => setError(e.message))
   }, [query, status])
+
+  async function loadMore() {
+    const requestId = latestRequest.current
+    setLoadingMore(true)
+    try {
+      const page = await api.applicants({ q: query, status, after: nextCursor })
+      if (requestId !== latestRequest.current) return // filters changed meanwhile
+      setApplicants((prev) => [...prev, ...page.applicants])
+      setNextCursor(page.nextCursor)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   useEffect(load, [load])
 
@@ -70,6 +95,26 @@ export default function ApplicantsPanel({ schema }) {
     const body = JSON.stringify(payload)
     if (createAttempt.current?.body !== body) createAttempt.current = { body, key: crypto.randomUUID() }
     return createAttempt.current.key
+  }
+
+  // Claude reads the details; they open in the form unsaved so a person checks them and
+  // fills in whatever the text didn't say.
+  async function draft(e) {
+    e.preventDefault()
+    setDrafting(true)
+    setError(null)
+    try {
+      const attrs = await api.draftApplicant(prompt)
+      const values = Object.fromEntries(Object.keys(EMPTY).map((key) => [key, attrs[key] ?? '']))
+      // Decimals arrive as strings like "1200000.0".
+      if (values.annual_income !== '') values.annual_income = Number(values.annual_income)
+      setEditing({ ...values, drafted: true })
+      setPrompt('')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setDrafting(false)
+    }
   }
 
   async function remove(id) {
@@ -115,9 +160,12 @@ export default function ApplicantsPanel({ schema }) {
           {filtered && (
             <button onClick={() => { setSearch(''); setQuery(''); setStatus('') }}>Clear</button>
           )}
-          <span className="muted">{applicants.length} {applicants.length === 1 ? 'applicant' : 'applicants'}</span>
+          <span className="muted">
+            {nextCursor ? `Showing ${applicants.length}` : `${applicants.length} ${applicants.length === 1 ? 'applicant' : 'applicants'}`}
+          </span>
         </div>
         <div className="actions">
+          <Link to="/faq" className="help-link">Help &amp; FAQ</Link>
           <button onClick={reevaluate} disabled={reevaluating}>
             {reevaluating ? 'Re-evaluating…' : 'Re-evaluate all'}
           </button>
@@ -127,11 +175,33 @@ export default function ApplicantsPanel({ schema }) {
         </div>
       </div>
 
+      {!editing && (
+        <form className="card draft" onSubmit={draft}>
+          <label className="wide">
+            Paste or describe an applicant
+            <textarea
+              rows={2}
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="e.g. Priya Shah (priya@acme.io), 29, salaried software engineer in Pune, earns ₹18L a year, CIBIL 742"
+              maxLength={5000}
+              required
+            />
+          </label>
+          <div className="form-actions">
+            <button className="primary" type="submit" disabled={drafting || !prompt.trim()}>
+              {drafting ? 'Reading…' : 'Fill with AI'}
+            </button>
+          </div>
+        </form>
+      )}
+
       {error && <p className="error">{error}</p>}
 
       {editing && (
         <form className="card form-grid" onSubmit={save}>
           <h2>{editing.id ? 'Edit applicant' : 'New applicant'}</h2>
+          {editing.drafted && <p className="muted wide">Check the AI-filled details and complete any blanks before saving.</p>}
           <label>Name<input value={editing.name} onChange={set('name')} required /></label>
           <label>Email<input type="email" value={editing.email} onChange={set('email')} required /></label>
           <label>Age<input type="number" value={editing.age ?? ''} onChange={set('age')} /></label>
@@ -183,6 +253,11 @@ export default function ApplicantsPanel({ schema }) {
           </tbody>
         </table>
       </div>
+      {nextCursor && (
+        <div className="load-more">
+          <button onClick={loadMore} disabled={loadingMore}>{loadingMore ? 'Loading…' : 'Load more'}</button>
+        </div>
+      )}
     </section>
   )
 }

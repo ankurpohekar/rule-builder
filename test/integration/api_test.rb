@@ -104,4 +104,20 @@ class ApiTest < ActionDispatch::IntegrationTest
       get "/api/applicants", params: { q: q }
       assert_equal names, response.parsed_body.map { |a| a["name"] }.sort, "q=#{q.inspect}"
     end
+
+  test "the list is paginated with a Link header" do
+    3.times { |i| Applicant.create!(name: "Person #{i}", email: "person#{i}@example.com", created_at: i.days.ago) }
+
+    get "/api/applicants", params: { limit: 2, status: "pending" }
+    assert_equal [ "Person 0", "Person 1" ], response.parsed_body.map { |a| a["name"] }
+    next_url = response.headers["Link"][/<([^>]+)>; rel="next"/, 1]
+    assert_includes next_url, "status=pending"
+
+    get next_url
+    assert_equal [ "Person 2" ], response.parsed_body.map { |a| a["name"] }
+    assert_nil response.headers["Link"]
+
+    get "/api/applicants", params: { after: "nonsense" }
+    assert_response :bad_request
+  end
 end

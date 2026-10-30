@@ -23,6 +23,8 @@ class Applicant < ApplicationRecord
   validates :annual_income, numericality: { greater_than_or_equal_to: 0, allow_nil: true }
 
   before_save :apply_rules, if: -> { new_record? || (changed & FIELDS.keys).any? }
+  # After commit, so a reader can't re-cache the old row between the delete and the commit.
+  after_commit :expire_cache
 
   # Trigram indexes need at least 3 characters to narrow anything down.
   SUBSTRING_SEARCH_MIN_LENGTH = 3
@@ -64,7 +66,9 @@ class Applicant < ApplicationRecord
       now = Time.current
       ids_by_decision.each do |(status, rule_id), ids|
         changed += where(id: ids).update_all(status: status, matched_rule_id: rule_id, evaluated_at: now, updated_at: now)
+        ApplicantCache.expire(ids) # update_all skips the after_commit callback
       end
+      ApplicantCache.expire_pages! if ids_by_decision.any? # statuses moved, so status-filtered pages changed
     end
 
     changed
@@ -81,4 +85,10 @@ class Applicant < ApplicationRecord
     self.status, self.matched_rule = self.class.decide(self, Rule.active.by_priority.to_a)
     self.evaluated_at = Time.current
   end
+
+  private
+    def expire_cache
+      ApplicantCache.expire(id)
+      ApplicantCache.expire_pages! if previously_new_record? || destroyed? || saved_changes.keys.intersect?(ApplicantCache::PAGE_FIELDS)
+    end
 end

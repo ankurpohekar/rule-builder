@@ -54,3 +54,8 @@ end
 gem "sidekiq", "~> 8.1"
 
 gem "anthropic", "~> 2.3"
+
+gem "neighbor", "~> 1.2"
+gem "informers", "~> 1.3"
+
+gem "redis", "~> 5.4"

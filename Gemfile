@@ -58,4 +58,4 @@ gem "anthropic", "~> 2.3"
 gem "neighbor", "~> 1.2"
 gem "informers", "~> 1.3"
 
-gem "redis", "~> 5.4"
+gem "redis", "~> 6.0"

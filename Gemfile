@@ -53,7 +53,7 @@ end
 # Background jobs (rule re-evaluation, mailers) backed by Redis [https://github.com/sidekiq/sidekiq]
 gem "sidekiq", "~> 8.1"
 
-gem "anthropic", "~> 2.3"
+gem "anthropic", "~> 2.6"
 
 gem "neighbor", "~> 1.2"
 gem "informers", "~> 1.3"
